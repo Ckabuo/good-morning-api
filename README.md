@@ -61,7 +61,7 @@ cd good-morning-api
 npm install
 ```
 
-3. Create a ``.env``file in the root directory (optional):
+3. Create a ``.env`` file in the root directory (optional):
 ```
 PORT=3000
 NODE_ENV=development
