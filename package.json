@@ -5,7 +5,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/app.js",
-    "dev": "nodemon src/app.ts"
+    "build": "tsc",
+    "dev": "nodemon src/app.ts",
+    "postinstall": "tsc"
+  },
+  "engines": {
+    "node": ">=18.20.5"
   },
   "keywords": [],
   "author": "DigitalEngineer",
