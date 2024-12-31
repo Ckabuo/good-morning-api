@@ -2,7 +2,7 @@ import express = require('express');
 import messageRoutes from './routes/messageRoutes';
 import { config } from './config';
 import { errorHandler } from "./middleware/errorHandler";
-import morgan = require('morgan');
+import morgan from 'morgan';
 import rateLimit from "express-rate-limit";
 import helmet from 'helmet';
 
