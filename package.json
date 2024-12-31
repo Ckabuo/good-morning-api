@@ -24,8 +24,7 @@
     "helmet": "^8.0.0",
     "morgan": "^1.10.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2",
-    "@types/morgan": "^1.9.9"
+    "typescript": "^5.7.2"
   },
   "devDependencies": {
     "@types/morgan": "^1.9.9",
