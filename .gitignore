@@ -11,3 +11,5 @@ node_modules/
 
 # Compiled output
 /dist
+
+message-state.json

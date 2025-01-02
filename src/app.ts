@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import morgan from 'morgan';
 import rateLimit from "express-rate-limit";
 import helmet from 'helmet';
+import axios from 'axios';
 
 const app = express();
 
@@ -38,10 +39,23 @@ app.use('/api/messages', messageRoutes);
 
 //Health check endpoint for production
 app.get('/', (req, res) => {
+    console.log('I dey Active Chief')
     res.status(200).json({
         status: 'I Dey Active Chief',
     });
 })
+
+const keepAlive = async () => {
+    try {
+        await axios.get(config.serverURL);
+        console.log(`server pinged at ${new Date().toISOString()} from ${config.nodeEnv} mode`);
+
+    } catch ( error ) {
+        console.log( 'server ping failed', error );
+    }
+}
+
+setInterval(keepAlive, 1000 * 60);
 
 app.use(errorHandler);
 

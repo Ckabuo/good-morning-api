@@ -1,10 +1,12 @@
 import {Message} from './types';
+import fs from 'fs';
 
 class MessageService {
 
     private messages: string[];
     private currentMessage: Message;
     private currentIndex: number;
+    private stateFile = 'message-state.json';
 
     constructor() {
         this.messages = [
@@ -362,7 +364,7 @@ class MessageService {
             "So many of my memories include you, good morning my love",
             "Good morning sunshine, as you go about today, remember that; To Love is to receive a glimpse of heaven. Do have a beautiful day my queen.",
             "Good morning, my love! Your beauty is the sunrise that paints the sky with the colors of our shared dreams.",
-            " Rise and shine, beautiful! Your radiance is the beacon that guides me through the dawn of each day, and I'm lucky to be guided by your light.",
+            "Rise and shine, beautiful! Your radiance is the beacon that guides me through the dawn of each day, and I'm lucky to be guided by your light.",
             "Good morning to my favorite girl. I'm glad to have you in my life bby girl🫂!",
         ];
 
@@ -397,30 +399,57 @@ class MessageService {
         const isNextDay = now.getDate() !== lastUpdate.getDate();
 
         // Check if 24 hours have passed
-        const hoursDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
-        const is24HoursPassed = hoursDiff >= 24;
+        // const hoursDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+        // const is24HoursPassed = hoursDiff >= 24;
 
-        return (isNextDay && isAfter8AM) || is24HoursPassed;
+        // return (isNextDay && isAfter8AM) || is24HoursPassed;
 
-        /*
+
         // For testing: Change 24 hours to 1 minute
         const minutesDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
          // Will update after 1 minute
         return minutesDiff >= 1;
-        */
+
     };
+
+    private loadState() {
+        try {
+            const data = fs.readFileSync(this.stateFile, "utf8");
+            const state = JSON.parse(data);
+            // this.currentMessage = state.currentMessage;
+            this.currentMessage = {
+                ...state.currentMessage,
+                lastUpdated: new Date(state.currentMessage.lastUpdated),
+            }
+            this.currentIndex = state.currentIndex;
+
+        } catch (error) {
+            console.error(error);
+            this.saveState(); //create initial state if file is missing or invalid
+        }
+    }
+
+    private saveState() {
+        const state = {
+            currentMessage: this.currentMessage,
+            currentIndex: this.currentIndex,
+        };
+        fs.writeFileSync(this.stateFile, JSON.stringify(state));
+    }
 
     public getAllMessages(): string[] {
         return [...this.messages];
     }
 
     public getMessage(): { text: string; lastUpdated: Date; formattedLastUpdated: string } {
+        this.loadState();
         if (this.shouldUpdateMessage()) {
             this.currentIndex = (this.currentIndex + 1) % this.messages.length;
             this.currentMessage = {
                 text: this.messages[this.currentIndex],
                 lastUpdated: new Date(),
             };
+            this.saveState();
         }
         return {
             text: this.currentMessage.text,
