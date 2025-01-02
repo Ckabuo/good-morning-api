@@ -55,7 +55,7 @@ const keepAlive = async () => {
     }
 }
 
-setInterval(keepAlive, 1000 * 60);
+setInterval(keepAlive, 1000 * 60 * 14);
 
 app.use(errorHandler);
 

@@ -399,16 +399,15 @@ class MessageService {
         const isNextDay = now.getDate() !== lastUpdate.getDate();
 
         // Check if 24 hours have passed
-        // const hoursDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
-        // const is24HoursPassed = hoursDiff >= 24;
+        const hoursDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+        const is24HoursPassed = hoursDiff >= 24;
 
-        // return (isNextDay && isAfter8AM) || is24HoursPassed;
+        return (isNextDay && isAfter8AM) || is24HoursPassed;
 
-
-        // For testing: Change 24 hours to 1 minute
-        const minutesDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
-         // Will update after 1 minute
-        return minutesDiff >= 1;
+        // --TODO For testing: Change 24 hours to 1 minute
+        // const minutesDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+        // Will update after 1 minute
+        // return minutesDiff >= 1;
 
     };
 
