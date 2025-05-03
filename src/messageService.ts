@@ -1,5 +1,9 @@
-import {Message} from './types';
+import { Message } from './types';
 import fs from 'fs';
+import cron from 'node-cron';
+import { getTimezoneOffset } from './utils/timezone'
+import { sendWhatsAppMessage } from "./WhatsappService";
+
 
 class MessageService {
 
@@ -9,6 +13,7 @@ class MessageService {
     private stateFile = 'message-state.json';
 
     constructor() {
+        // Array of messages.
         this.messages = [
             "Rise and shine, beautiful! Your smile is the sunshine that lights up my world. 🤗 💜",
             "Good morning, my love! Waking up to thoughts of you brightens my day.",
@@ -187,7 +192,7 @@ class MessageService {
             "💫 Rise and glow, my darling! Your presence lights up my world in the most beautiful way.",
             "🌻 Wishing you a morning filled with the laughter of joy and the warmth of our connection. Good morning sunshine",
             "Good morning, sunshine! Your love is the melody that plays in the soundtrack of my life.",
-            "Good morning sunshine. I just wanted to let you know that I might fail a million times, but as long as you’re in my life, I’ve succeeded where it matters most.",
+            "Good morning sunshine. I just wanted to let you know that I might fail a million times, but as long as you're in my life, I've succeeded where it matters most.",
             "Another day to cherish the love we have and create countless memories. Good morning sunshine",
             "Good morning, beautiful! Your love is the thread that weaves the fabric of our shared journey.",
             "Rise and dazzle, my dearest! Your radiance is the light that brightens my darkest days. 🌅",
@@ -324,15 +329,15 @@ class MessageService {
             "Wishing you a morning filled with the fragrance of love and the promise of a beautiful day. Good morning, my fragrant flower!",
             "Good morning, my sunshine! Your love is the melody that plays in the symphony of my heart, and it's a beautiful composition.",
             "Wake up, my love! Your presence is the sunshine that brightens my every day, and I feel lucky to bask in it.",
-            "I’m tired of texting you good morning. Let’s move in together so I can say it to your face.",
+            "I'm tired of texting you good morning. Let's move in together so I can say it to your face.",
             "Good morning, beautiful! Your love is the brushstroke that paints my world in vibrant colors, and I'm in awe of the masterpiece.",
-            "I’ve spent the night dreaming of you — and want to spend the whole day alongside you.",
+            "I've spent the night dreaming of you — and want to spend the whole day alongside you.",
             "Wishing you a morning as sweet as your kisses and as magical as our love. Good morning, my sweet enchantress!",
             "Good morning, love! Your laughter is the music that fills the air with joy, and I'm lucky to dance to its rhythm.",
             "Wake up, my love! Today is another chance to cherish the love we have. Good morning, my cherished one!",
             "Another day, another opportunity to fall in love with the way you make my heart skip a beat. Good morning, my heartbeat!",
             "Good morning, sweetheart! Your love is the anchor that grounds me in happiness, and I feel secure in your love.",
-            "Rise and shine, my queen! You’re more beautiful than the sunrise outside my window.",
+            "Rise and shine, my queen! You're more beautiful than the sunrise outside my window.",
             "Wishing you a morning filled with moments that make your heart dance. Good morning, my dancing queen!",
             "Good morning, my love! Your presence is the spark that sets my day ablaze with joy, and I'm lucky to be ignited by you.",
             "Wake up, my sunshine! Your radiance brightens the path of my journey, and I'm lucky to have you as my guiding light.",
@@ -353,13 +358,13 @@ class MessageService {
             "Another day, another opportunity to express my gratitude for the masterpiece that is you. Good morning, my living work of art!",
             "Good morning, beautiful! Your love is the compass that leads me in the right direction, and I feel blessed to follow it.",
             "Rise and radiate, my queen! Your presence makes everything in life more vibrant, and I cherish each moment with you.",
-            "Wishing you a morning as beautiful as the petals of a rose and as sweet as its fragrance. Good morning, my blooming flower!",
+            "🌸 Wishing you a morning as beautiful as the petals of a rose and as sweet as its fragrance. Good morning, my blooming flower!",
             "Good morning, my love! Your love is the poetry my heart recites, and I am lucky to be the audience of such a beautiful symphony.",
             "Wake up, my love! Today is a blank canvas waiting for the strokes of our shared dreams, and I can't wait to create with you.",
             "Another day, another chance to fall deeper in love with the incredible person you are. Good morning, my ever-inspiring love!",
-            "Good morning, sweetheart! Your love is the key that unlocks the door to my happiness, and I feel so fortunate to hold it.",
+            "🗝️ Good morning, sweetheart! Your love is the key that unlocks the door to my happiness, and I feel so fortunate to hold it.",
             "Rise and glow, my darling! Your presence lights up my world in the most beautiful way, and I'm grateful for the light you bring.",
-            "A little note, short and true, just to say ‘Thinking about you’. Good morning Primrose.",
+            "A little note, short and true, just to say 'Thinking about you'. Good morning Primrose.",
             "Good morning sunshine, I hope the years be good to us and all our hopes fulfill that every day that passes by shall find us closer still, Have a fruitful day/week ahead.",
             "So many of my memories include you, good morning my love",
             "Good morning sunshine, as you go about today, remember that; To Love is to receive a glimpse of heaven. Do have a beautiful day my queen.",
@@ -368,14 +373,19 @@ class MessageService {
             "Good morning to my favorite girl. I'm glad to have you in my life bby girl🫂!",
         ];
 
+        // The current message.
         this.currentMessage = {
             text: this.messages[0],
             lastUpdated: new Date(),
         };
 
+        // The index of the current message in the array.
         this.currentIndex = 0;
+
+        this.scheduleDailyMessage();
     }
 
+    // Formats a date object into a string.
     private formatDate(date: Date) : string {
         return date.toLocaleDateString("en-US", {
             year: "numeric",
@@ -390,12 +400,17 @@ class MessageService {
         });
     }
 
+    /**
+     * Determines if the message should be updated.
+     * Message is updated if it is a new day and after 8AM or if 24 hours have passed
+     * @returns boolean
+     */
     private shouldUpdateMessage(): boolean  {
         const now = new Date();
         const lastUpdate = this.currentMessage.lastUpdated;
 
         // Check if it's a new day and after 8 AM
-        const isAfter8AM = now.getHours() >= 8;
+        const isAfter8AM = now.getHours() >= 8 && now.getMinutes() < 10;
         const isNextDay = now.getDate() !== lastUpdate.getDate();
 
         // Check if 24 hours have passed
@@ -407,10 +422,11 @@ class MessageService {
         // --TODO For testing: Change 24 hours to 1 minute
         // const minutesDiff = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
         // Will update after 1 minute
-        // return minutesDiff >= 1;
-
+        // return minutesDiff >= 0.95;
+        // return Math.floor(minutesDiff) >= 1;
     };
 
+    // Loads the state from a file.
     private loadState() {
         try {
             const data = fs.readFileSync(this.stateFile, "utf8");
@@ -428,6 +444,7 @@ class MessageService {
         }
     }
 
+    // Saves the state to a file.
     private saveState() {
         const state = {
             currentMessage: this.currentMessage,
@@ -436,11 +453,68 @@ class MessageService {
         fs.writeFileSync(this.stateFile, JSON.stringify(state));
     }
 
+    // Returns all messages.
     public getAllMessages(): string[] {
         return [...this.messages];
     }
 
+    /**
+     * Returns the current message
+     * Loads message state
+     * @returns { text: string; lastUpdated: Date; formattedLastUpdated: string }
+     */
     public getMessage(): { text: string; lastUpdated: Date; formattedLastUpdated: string } {
+        this.loadState();
+
+        return {
+            text: this.currentMessage.text,
+            lastUpdated: this.currentMessage.lastUpdated,
+            formattedLastUpdated: this.formatDate(this.currentMessage.lastUpdated)
+        };
+    }
+
+    // Returns the number of messages.
+    public getMessageCount(): number {
+        return this.messages.length;
+    }
+
+    /**
+     * Adds a message to the list of messages
+     * @param message
+     * @returns void
+     */
+    public addMessage(message: string): void {
+        if (!message.trim()) {
+            throw new Error('Message cannot be empty');
+        }
+        this.messages.push(message);
+    }
+
+    /**
+     * Returns the index of the current message
+     * @returns number
+     */
+    public getCurrentMessageIndex(): number {
+        return this.currentIndex;
+    }
+
+    /**
+     * Returns the last updated time
+     * @returns {date: Date; formatted: string}
+     */
+    public getLastUpdateTime(): {date: Date; formatted: string} {
+        return {
+            date: this.currentMessage.lastUpdated,
+            formatted: this.formatDate(this.currentMessage.lastUpdated)
+        };
+    }
+
+    /**
+     * Loads the current state, checks if the message should be updated,
+     * updates the message, and saves the state.
+     * @returns Promise<void>
+     */
+    private async sendScheduledMessage(): Promise<void> {
         this.loadState();
         if (this.shouldUpdateMessage()) {
             this.currentIndex = (this.currentIndex + 1) % this.messages.length;
@@ -449,36 +523,44 @@ class MessageService {
                 lastUpdated: new Date(),
             };
             this.saveState();
+
+            await sendWhatsAppMessage(this.currentMessage.text);
+
+        } else {
+            console.log('No message update needed at this time');
         }
-        return {
-            text: this.currentMessage.text,
-            lastUpdated: this.currentMessage.lastUpdated,
-            formattedLastUpdated: this.formatDate(this.currentMessage.lastUpdated)
-        };
     }
 
-    public getMessageCount(): number {
-        return this.messages.length;
-    }
+    /**
+     * Schedules the daily message to be sent at 7:00 AM UTC.
+     * Uses cron job.
+     * @returns void
+     */
 
-    public addMessage(message: string): void {
-        if (!message.trim()) {
-            throw new Error('Message cannot be empty');
-        }
-        this.messages.push(message);
-    }
+    private scheduleDailyMessage(): void {
+        // Get the timezone offset for WAT (West Africa Time)
+        const timezoneOffset = getTimezoneOffset('Africa/Lagos');
 
-    public getCurrentMessageIndex(): number {
-        return this.currentIndex;
-    }
+        /**
+            Schedule to run every day at 8:00 AM WAT
+            The cron syntax is: '* * * * * *' (seconds minutes hours dayOfMonth month dayOfWeek)
+            For WAT, we need to adjust for the UTC time that cron uses.
+            If WAT is UTC+1, then 8 AM WAT is 7 AM UTC.
+         */
 
-    public getLastUpdateTime(): {date: Date; formatted: string} {
-        return {
-            date: this.currentMessage.lastUpdated,
-            formatted: this.formatDate(this.currentMessage.lastUpdated)
-        };
-    }
+        const cronSchedule = `0 0 7 * * *`;
+        // const cronSchedule = `* * * * *`; //--ToDo For testing: Change 7:00 AM UTC to every minute
 
+        cron.schedule(cronSchedule, () => {
+            console.log('Running scheduled WhatsApp message...');
+            this.sendScheduledMessage();
+        }, {
+            scheduled: true,
+            timezone: 'Etc/UTC' // Important to set the timezone for cron
+        });
+
+        console.log('Daily WhatsApp message scheduled for 8:00 AM WAT.');
+    }
 }
 
 export const messageService = new MessageService();

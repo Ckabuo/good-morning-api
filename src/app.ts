@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import rateLimit from "express-rate-limit";
 import helmet from 'helmet';
 import axios from 'axios';
+import { sendWhatsAppMessage } from './WhatsappService';
 
 const app = express();
 
@@ -43,7 +44,7 @@ app.get('/', (req, res) => {
     res.status(200).json({
         status: 'I Dey Active Chief',
     });
-})
+});
 
 const keepAlive = async () => {
     try {
@@ -53,7 +54,7 @@ const keepAlive = async () => {
     } catch ( error ) {
         console.log( 'server ping failed', error );
     }
-}
+};
 
 setInterval(keepAlive, 1000 * 60 * 14);
 
@@ -62,3 +63,5 @@ app.use(errorHandler);
 app.listen(config.port, () => {
     console.log(`Server is running on ${ config.port} in ${config.nodeEnv} mode`);
 });
+
+// sendWhatsAppMessage('Hello! I dey active my guy');
